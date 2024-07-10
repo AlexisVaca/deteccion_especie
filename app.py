@@ -3,7 +3,9 @@ from PIL import Image
 import torch
 from ultralytics import YOLO
 from io import BytesIO
+import requests
 import os
+import numpy as np
 
 app = Flask(__name__)
 
@@ -19,13 +21,19 @@ def saludar():
 
 @app.route('/detect', methods=['POST'])
 def detect_objects():
-    # Verificar si se ha enviado un archivo
-    if 'image' not in request.files:
-        return jsonify({'error': 'No image file provided'}), 400
+    # Verificar si se ha enviado un archivo o una URL
+    if 'image' not in request.files and 'url' not in request.json:
+        return jsonify({'error': 'No image file or URL provided'}), 400
     
-    # Leer la imagen desde la solicitud
-    image_file = request.files['image']
-    img = Image.open(BytesIO(image_file.read())).convert('RGB')
+    if 'image' in request.files:
+        # Leer la imagen desde la solicitud
+        image_file = request.files['image']
+        img = Image.open(BytesIO(image_file.read())).convert('RGB')
+    else:
+        # Leer la imagen desde la URL
+        image_url = request.json['url']
+        response = requests.get(image_url)
+        img = Image.open(BytesIO(response.content)).convert('RGB')
 
     # Realizar la predicción en la imagen
     results = model(img)
@@ -36,6 +44,7 @@ def detect_objects():
         x1, y1, x2, y2 = pred.xyxy.cpu().numpy().astype(int)[0]
         label_index = int(pred.cls.item())
         confidence = float(pred.conf.item())
+        
         # Verificar si el índice está dentro de las etiquetas personalizadas
         if label_index < len(custom_labels):
             label_name = custom_labels[label_index]
@@ -47,15 +56,17 @@ def detect_objects():
 
         detections.append({
             'label': label_name,
-            'confidence': float(confidence),
+            'confidence': confidence,
             'box': [x1, y1, x2, y2]
         })
     
     # Devolver los resultados como JSON
     return jsonify(detections)
+    # Verificar si se ha enviado un archivo
+   
 
 if __name__ == "__main__":
-    from waitress import serve
-    serve(app, host="0.0.0.0", port=8080)
-    #port = int(os.environ.get('PORT', 5000))
-    #app.run(host='0.0.0.0', port=port, debug=True)
+    #from waitress import serve
+    #serve(app, host="0.0.0.0", port=8080)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
