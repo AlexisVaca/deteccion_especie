@@ -13,6 +13,10 @@ model = YOLO('model/best.pt')
 # Definir etiquetas personalizadas si es necesario
 custom_labels = ['Cervicabra', 'Chupil', 'Condor', 'GallaretaAndina', 'GanadoVacuno', 'Humano', 'OsoAnteojos', 'PatoZambullidorGrande', 'Puma', 'TucanAndinoPiquilaminado', 'VenadoColaBlanca', 'ZorrilloEspaldaBlancaSureño', 'ZorroCulpeo']
 
+@app.route('/', methods=['GET'])
+def saludar():
+    return jsonify({'mensaje': '¡Hola desde mi aplicación en Render!'})
+
 @app.route('/detect', methods=['POST'])
 def detect_objects():
     # Verificar si se ha enviado un archivo
