@@ -5,7 +5,7 @@ from ultralytics import YOLO
 from io import BytesIO
 import requests
 import os
-import numpy as np
+import time
 
 app = Flask(__name__)
 
@@ -22,26 +22,29 @@ def saludar():
 @app.route('/detect', methods=['POST'])
 def detect_objects():
     # Verificar si se ha enviado un archivo o una URL
-    if 'image' not in request.files and 'url' not in request.json:
-        return jsonify({'error': 'No image file or URL provided'}), 400
+    if 'url' not in request.json:
+        return jsonify({'error': 'No URL provided'}), 400
+    image_url = request.json['url']
+    response = requests.get(image_url)
     
-    if 'image' in request.files:
-        # Leer la imagen desde la solicitud
-        image_file = request.files['image']
-        img = Image.open(BytesIO(image_file.read())).convert('RGB')
-    else:
-        # Leer la imagen desde la URL
-        image_url = request.json['url']
-        response = requests.get(image_url)
-        img = Image.open(BytesIO(response.content)).convert('RGB')
-
+    if response.status_code != 200:
+        return jsonify({'error':'Could not retrieve image'}),400
+    img = Image.open(BytesIO(response.content)).convert('RGB')
+    start_time = time.time()
     # Realizar la predicción en la imagen
     results = model(img)
+    end_time = time.time()
+    print(f"Tiempo de procesamiento: {end_time - start_time} segundos")
 
+# Medir el uso de memoria (opcional, depende de tu entorno)
+# Puedes usar la biblioteca psutil para obtener información sobre el uso de memoria
+    import psutil
+    print(f"Uso de memoria: {psutil.virtual_memory().percent}%")
+    
     # Procesar los resultados de la detección
     detections = []
     for pred in results[0].boxes:
-        x1, y1, x2, y2 = pred.xyxy.cpu().numpy().astype(int)[0]
+        x1, y1, x2, y2 = [int(coord) for coord in pred.xyxy.cpu().numpy().astype(int)[0]]
         label_index = int(pred.cls.item())
         confidence = float(pred.conf.item())
         
@@ -50,10 +53,6 @@ def detect_objects():
             label_name = custom_labels[label_index]
         else:
             label_name = f'Unknown({label_index})'
-        
-        # Asegurarse de que x1, y1, x2, y2 son enteros
-        x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-
         detections.append({
             'label': label_name,
             'confidence': confidence,
