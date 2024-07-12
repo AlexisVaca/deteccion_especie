@@ -14,7 +14,7 @@ except KeyError as e:
 
 
 # Definir etiquetas personalizadas si es necesario
-custom_labels = ['Cervicabra', 'Chupil', 'Condor', 'GallaretaAndina', 'GanadoVacuno', 'Humano', 'OsoAnteojos', 'PatoZambullidorGrande', 'Puma', 'TucanAndinoPiquilaminado', 'VenadoColaBlanca', 'ZorrilloEspaldaBlancaSureño', 'ZorroCulpeo']
+custom_labels = ['Mazama rufina', 'Podiceps occipitalis', 'Vultur gryphus', 'Fulica ardesiaca', 'Bos taurus', 'Homo sapiens', 'Tremarctos ornatus', 'Oxyura jamaicensis', 'Puma concolor', 'Andigena laminirostris', 'Odocoileus virginianus', 'Conepatus semistriatus', 'Lycalopex culpaeus']
 
 @app.route('/', methods=['GET'])
 def saludar():
@@ -59,5 +59,5 @@ def detect_objects():
 if __name__ == "__main__":
     from waitress import serve
     serve(app, host="0.0.0.0", port=8080)
-#    port = int(os.environ.get('PORT', 5000))
-#    app.run(host='0.0.0.0', port=port, debug=True)
+    #port = int(os.environ.get('PORT', 5000))
+    #app.run(host='0.0.0.0', port=port, debug=True)
