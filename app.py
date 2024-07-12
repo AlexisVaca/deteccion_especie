@@ -1,16 +1,17 @@
 from flask import Flask, request, jsonify
 from PIL import Image
-import torch
 from ultralytics import YOLO
 from io import BytesIO
 import requests
-import os
-import time
 
 app = Flask(__name__)
 
-# Cargar el modelo YOLOv5
-model = YOLO('model/best.pt')
+try:
+    model = YOLO('model/best.pt')  # Reemplaza con la ruta a tu modelo cuantizado
+except KeyError as e:
+    print(f"Error al cargar el modelo: {e}")
+    raise
+
 
 # Definir etiquetas personalizadas si es necesario
 custom_labels = ['Cervicabra', 'Chupil', 'Condor', 'GallaretaAndina', 'GanadoVacuno', 'Humano', 'OsoAnteojos', 'PatoZambullidorGrande', 'Puma', 'TucanAndinoPiquilaminado', 'VenadoColaBlanca', 'ZorrilloEspaldaBlancaSureño', 'ZorroCulpeo']
@@ -30,16 +31,7 @@ def detect_objects():
     if response.status_code != 200:
         return jsonify({'error':'Could not retrieve image'}),400
     img = Image.open(BytesIO(response.content)).convert('RGB')
-    start_time = time.time()
-    # Realizar la predicción en la imagen
     results = model(img)
-    end_time = time.time()
-    print(f"Tiempo de procesamiento: {end_time - start_time} segundos")
-
-# Medir el uso de memoria (opcional, depende de tu entorno)
-# Puedes usar la biblioteca psutil para obtener información sobre el uso de memoria
-    import psutil
-    print(f"Uso de memoria: {psutil.virtual_memory().percent}%")
     
     # Procesar los resultados de la detección
     detections = []
@@ -65,7 +57,7 @@ def detect_objects():
    
 
 if __name__ == "__main__":
-    #from waitress import serve
-    #serve(app, host="0.0.0.0", port=8080)
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=8080)
+#    port = int(os.environ.get('PORT', 5000))
+#    app.run(host='0.0.0.0', port=port, debug=True)
